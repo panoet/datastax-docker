@@ -16,8 +16,8 @@ And then install to container with these condition:
 - Datastax running in GRAPH and SEARCH workload
 
 After installation, access studio and opscenter using browser:
-- localhost:9091
-- localhost:8888
+- (localhost:9091)
+- (localhost:8888)
 
 After launching the studio / opscenter, add the seed node using host ```node``` instead of IP address.
 

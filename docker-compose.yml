@@ -1,0 +1,80 @@
+version: '3.5'
+# :latest datastax is not maintained
+# Need a version of docker-compose that supports network name
+
+services:
+  # DataStax Enterprise
+  node:
+    # Specify the container name explicitly to avoid getting underscores
+    container_name: node
+    image: datastax/dse-server:6.8.4
+    # Enable Graph - -f enabled by default
+    command: [-g -s]
+    ports:
+      - "9042:9042" # Expose cassandra to host
+      - "8182:8182" # Expose graph to host
+      - "9077:9077" # Expose always on sql to host
+    environment:
+      DS_LICENSE: accept
+      HEAP_NEWSIZE: 128M
+      MAX_HEAP_SIZE: 4G
+      OPSCENTER_IP: opscenter
+    volumes:
+      - dse_data:/var/lib/cassandra
+    # Allow DSE to lock memory with mlock
+    cap_add:
+      - IPC_LOCK
+    ulimits:
+      memlock: -1
+    networks:
+      - dse
+    links:
+      - opscenter
+
+# One instance of DataStax Studio
+  studio:
+    container_name: studio
+    image: datastax/dse-studio:6.8.4
+    ports:
+      - "9091:9091" # The Web UI exposed to our host
+    environment:
+      DS_LICENSE: accept
+    volumes:
+      - studio_notebooks:/var/lib/datastax-studio
+    networks:
+      - dse
+      
+# One instance of Datastax OpsCenter
+  opscenter:
+    container_name: opscenter
+    image: "datastax/dse-opscenter:6.8.0"
+    ports:
+      - 8888:8888
+      - 61620:61620
+    environment:
+      DS_LICENSE: accept
+    volumes:
+      - opscenter:/var/lib/opscenter
+    networks:
+      - dse
+
+volumes:
+  # will be <dir_name>_data
+  dse_data:
+    driver: local
+  studio_notebooks:
+    driver: local
+  opscenter:
+    driver: local
+
+# the actual name will be <directory_name>_<network_name>
+# specify name explicitly to avoid underscores
+networks:
+  dse:
+    driver: bridge
+    external: true
+    name: datastax
+#    ipam:
+#      config:
+#      - subnet: 172.18.0.0/8
+#      - gateway: 172.18.0.1
